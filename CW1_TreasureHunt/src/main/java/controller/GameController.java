@@ -44,12 +44,22 @@ public class GameController {
             }
         });
 
-        // Set up hint button listener
-        view.addHintButtonListener(new ActionListener() {
+        // Set up BFS hint button listener
+        view.addHintBFSButtonListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (isGameInProgress) {
-                    handleHintRequest();
+                    handleHintBFSRequest();
+                }
+            }
+        });
+
+        // Set up A* hint button listener
+        view.addHintAStarButtonListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (isGameInProgress) {
+                    handleHintAStarRequest();
                 }
             }
         });
@@ -150,16 +160,26 @@ public class GameController {
     }
 
     /**
-     * Handles the hint button press.
+     * Handles the BFS hint button press.
      */
-    private void handleHintRequest() {
+    private void handleHintBFSRequest() {
         // Only show hint if we have enough score and treasures remain
         if (model.getScore() >= 3 && !model.allTreasuresFound()) {
-            boolean pathFound = model.showHint();
+            // Clear previous hints first to ensure new path is shown
+            model.clearPathHints();
+            animationManager.stopHintPathAnimation();
+
+            // Set the animation manager to display BFS path type
+            animationManager.setAStarPathActive(false);
+
+            boolean pathFound = model.showHintBFS();
 
             if (pathFound) {
-                // Start the path animation
-                animationManager.startHintPathAnimation();
+                // Start the path animation with BFS style
+                animationManager.startHintPathAnimation(false);
+
+                // Update statistics display
+                view.updateStatistics(true, model.getBFSCellsExplored(), model.getLastPathLength());
             }
 
             updateView();
@@ -171,6 +191,47 @@ public class GameController {
                 resetGame();
             }
         }
+    }
+
+    /**
+     * Handles the A* hint button press.
+     */
+    private void handleHintAStarRequest() {
+        // Only show hint if we have enough score and treasures remain
+        if (model.getScore() >= 3 && !model.allTreasuresFound()) {
+            // Clear previous hints first to ensure new path is shown
+            model.clearPathHints();
+            animationManager.stopHintPathAnimation();
+
+            // Set the animation manager to display A* path type
+            animationManager.setAStarPathActive(true);
+
+            boolean pathFound = model.showHintAStar();
+
+            if (pathFound) {
+                // Start the path animation with A* style
+                animationManager.startHintPathAnimation(true);
+
+                // Update statistics display
+                view.updateStatistics(false, model.getAStarCellsExplored(), model.getLastPathLength());
+            }
+
+            updateView();
+
+            // Check if we've run out of points after using hint
+            if (model.getScore() <= 0) {
+                isGameInProgress = false;
+                view.showGameOverMessage(false, model.getScore());
+                resetGame();
+            }
+        }
+    }
+
+    /**
+     * Legacy method to maintain backward compatibility.
+     */
+    private void handleHintRequest() {
+        handleHintBFSRequest();
     }
 
     /**
@@ -197,6 +258,9 @@ public class GameController {
 
         // Update the view
         updateView();
+
+        // Clear statistics
+        view.updateStatistics(true, 0, 0);
 
         // Game is now in progress
         isGameInProgress = true;

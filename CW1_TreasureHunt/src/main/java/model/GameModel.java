@@ -22,6 +22,12 @@ public class GameModel {
     private int treasuresFound;
     private List<Point> treasureLocations;
     private List<Point> currentPath;
+    private boolean hintUsedSinceLastMove; // Tracks if hint was already used before moving
+
+    // Search algorithm statistics
+    private int bfsCellsExplored;
+    private int aStarCellsExplored;
+    private int lastPathLength;
 
     // Direction vectors for movement and pathfinding
     private static final int[][] DIRECTIONS = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}}; // down, right, up, left
@@ -33,6 +39,7 @@ public class GameModel {
         grid = new Cell[GRID_SIZE][GRID_SIZE];
         treasureLocations = new ArrayList<>();
         currentPath = new ArrayList<>();
+        hintUsedSinceLastMove = false;
         resetGame();
     }
 
@@ -42,6 +49,10 @@ public class GameModel {
     public void resetGame() {
         score = INITIAL_SCORE;
         treasuresFound = 0;
+        hintUsedSinceLastMove = false;
+        bfsCellsExplored = 0;
+        aStarCellsExplored = 0;
+        lastPathLength = 0;
         generateMap();
     }
 
@@ -159,6 +170,9 @@ public class GameModel {
         // Clear path hints
         clearPathHints();
 
+        // Reset hint used flag when player moves
+        hintUsedSinceLastMove = false;
+
         // Calculate new position based on direction
         switch (direction) {
             case UP:
@@ -219,10 +233,10 @@ public class GameModel {
     }
 
     /**
-     * Finds and displays the shortest path to the nearest treasure.
+     * Finds and displays the shortest path to the nearest treasure using BFS.
      * Returns true if a path was found.
      */
-    public boolean showHint() {
+    public boolean showHintBFS() {
         // Clear previous hints
         clearPathHints();
 
@@ -253,8 +267,59 @@ public class GameModel {
                 }
             }
 
-            // Using hint costs 3 points
-            score -= 3;
+            // Using hint costs 3 points - but only charge once if player is comparing algorithms
+            if (!hintUsedSinceLastMove) {
+                score -= 3;
+                hintUsedSinceLastMove = true;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Finds and displays the shortest path to the nearest treasure using A* search.
+     * Returns true if a path was found.
+     */
+    public boolean showHintAStar() {
+        // Clear previous hints
+        clearPathHints();
+
+        if (treasureLocations.isEmpty()) {
+            return false;
+        }
+
+        // Find closest treasure and shortest path
+        Point closestTreasure = null;
+        List<Point> shortestPath = null;
+        int shortestDistance = Integer.MAX_VALUE;
+
+        for (Point treasure : treasureLocations) {
+            List<Point> path = findPathAStar(playerPosition, treasure);
+            if (path != null && path.size() < shortestDistance) {
+                shortestDistance = path.size();
+                shortestPath = path;
+                closestTreasure = treasure;
+            }
+        }
+
+        // Mark the path on the map
+        if (shortestPath != null) {
+            for (Point p : shortestPath) {
+                if (grid[p.getY()][p.getX()] == Cell.EMPTY) {
+                    grid[p.getY()][p.getX()] = Cell.PATH_HINT;
+                    currentPath.add(p);
+                }
+            }
+
+            // Using hint costs 3 points - but only charge once if player is comparing algorithms
+            if (!hintUsedSinceLastMove) {
+                score -= 3;
+                hintUsedSinceLastMove = true;
+            }
+
             return true;
         }
 
@@ -269,15 +334,21 @@ public class GameModel {
         Queue<Point> queue = new LinkedList<>();
         Map<Point, Point> parentMap = new HashMap<>();
 
+        // Reset cells explored counter
+        bfsCellsExplored = 0;
+
         queue.add(start);
         visited[start.getY()][start.getX()] = true;
+        bfsCellsExplored++; // Count starting cell
 
         while (!queue.isEmpty()) {
             Point current = queue.poll();
 
             if (current.getX() == end.getX() && current.getY() == end.getY()) {
                 // Path found, reconstruct it
-                return reconstructPath(parentMap, start, end);
+                List<Point> path = reconstructPath(parentMap, start, end);
+                lastPathLength = path.size();
+                return path;
             }
 
             for (int[] dir : DIRECTIONS) {
@@ -290,11 +361,119 @@ public class GameModel {
                     queue.add(next);
                     visited[newY][newX] = true;
                     parentMap.put(next, current);
+                    bfsCellsExplored++; // Count each explored cell
                 }
             }
         }
 
         return null; // No path found
+    }
+
+    /**
+     * Calculates the Manhattan distance between two points.
+     */
+    private int calculateManhattanDistance(Point a, Point b) {
+        return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY());
+    }
+
+    /**
+     * Finds the path between two points using A* search algorithm.
+     */
+    private List<Point> findPathAStar(Point start, Point end) {
+        // Reset cells explored counter
+        aStarCellsExplored = 0;
+
+        // Priority queue with custom comparator for f-score
+        PriorityQueue<AStarNode> openSet = new PriorityQueue<>(
+                Comparator.comparingInt(node -> node.fScore)
+        );
+
+        // Track visited nodes
+        boolean[][] visited = new boolean[GRID_SIZE][GRID_SIZE];
+
+        // For node n, gScore[n] is the cost of the cheapest path from start to n
+        Map<Point, Integer> gScore = new HashMap<>();
+
+        // For node n, parent[n] is the node immediately preceding it on the cheapest path
+        Map<Point, Point> parentMap = new HashMap<>();
+
+        // Add start node to open set
+        gScore.put(start, 0);
+        int startFScore = calculateManhattanDistance(start, end);
+        openSet.add(new AStarNode(start, startFScore));
+        aStarCellsExplored++; // Count starting node
+
+        while (!openSet.isEmpty()) {
+            // Get node with lowest f-score
+            AStarNode currentNode = openSet.poll();
+            Point current = currentNode.point;
+
+            // Skip if already visited
+            if (visited[current.getY()][current.getX()]) {
+                continue;
+            }
+
+            // Mark as visited
+            visited[current.getY()][current.getX()] = true;
+
+            // Check if we reached the goal
+            if (current.getX() == end.getX() && current.getY() == end.getY()) {
+                List<Point> path = reconstructPath(parentMap, start, end);
+                lastPathLength = path.size();
+                return path;
+            }
+
+            // Get current g-score (cost from start)
+            int currentGScore = gScore.getOrDefault(current, Integer.MAX_VALUE);
+
+            // Check all neighbors
+            for (int[] dir : DIRECTIONS) {
+                int newX = current.getX() + dir[0];
+                int newY = current.getY() + dir[1];
+
+                // Skip invalid or obstacle cells
+                if (!isValidPosition(newX, newY) ||
+                        grid[newY][newX] == Cell.OBSTACLE) {
+                    continue;
+                }
+
+                Point neighbor = new Point(newX, newY);
+
+                // Calculate tentative g-score (1 step from current)
+                int tentativeGScore = currentGScore + 1;
+
+                // If this path is better than any previous one
+                if (tentativeGScore < gScore.getOrDefault(neighbor, Integer.MAX_VALUE)) {
+                    // Record this path
+                    parentMap.put(neighbor, current);
+                    gScore.put(neighbor, tentativeGScore);
+
+                    // Calculate f-score = g-score + heuristic
+                    int fScore = tentativeGScore + calculateManhattanDistance(neighbor, end);
+
+                    // Add to open set if not visited
+                    if (!visited[newY][newX]) {
+                        openSet.add(new AStarNode(neighbor, fScore));
+                        aStarCellsExplored++; // Count each explored cell
+                    }
+                }
+            }
+        }
+
+        return null; // No path found
+    }
+
+    /**
+     * Helper class for A* algorithm to track nodes and their f-scores.
+     */
+    private class AStarNode {
+        Point point;
+        int fScore;
+
+        AStarNode(Point point, int fScore) {
+            this.point = point;
+            this.fScore = fScore;
+        }
     }
 
     /**
@@ -341,5 +520,36 @@ public class GameModel {
 
     public Point getPlayerPosition() {
         return playerPosition;
+    }
+
+    /**
+     * Returns the number of cells explored by the BFS algorithm
+     * during the last hint calculation.
+     */
+    public int getBFSCellsExplored() {
+        return bfsCellsExplored;
+    }
+
+    /**
+     * Returns the number of cells explored by the A* algorithm
+     * during the last hint calculation.
+     */
+    public int getAStarCellsExplored() {
+        return aStarCellsExplored;
+    }
+
+    /**
+     * Returns the length of the last calculated path.
+     */
+    public int getLastPathLength() {
+        return lastPathLength;
+    }
+
+    /**
+     * Legacy method to maintain backward compatibility.
+     * Uses BFS as the default algorithm.
+     */
+    public boolean showHint() {
+        return showHintBFS();
     }
 }

@@ -21,7 +21,9 @@ public class GameView extends JFrame {
     private GamePanel gamePanel;
     private JLabel scoreLabel;
     private JLabel treasureLabel;
-    private JButton hintButton;
+    private JLabel statsLabel;
+    private JButton hintBFSButton;
+    private JButton hintAStarButton;
     private JButton resetButton;
 
     // Constants
@@ -83,9 +85,19 @@ public class GameView extends JFrame {
                 GameModel.GRID_SIZE * GamePanel.getCellSize()
         ));
 
+        // Create statistics panel
+        JPanel statsPanel = new JPanel();
+        statsPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        statsLabel = new JLabel("No path calculated yet");
+        Font statsFont = new Font("Arial", Font.ITALIC, 12);
+        statsLabel.setFont(statsFont);
+        statsPanel.add(statsLabel);
+
         // Create control panel with game info and buttons
         JPanel controlPanel = new JPanel();
-        controlPanel.setLayout(new FlowLayout());
+        controlPanel.setLayout(new BorderLayout());
+
+        JPanel buttonPanel = new JPanel(new FlowLayout());
 
         scoreLabel = new JLabel("Score: 0");
         Font labelFont = new Font("Arial", Font.BOLD, 14);
@@ -94,20 +106,40 @@ public class GameView extends JFrame {
         treasureLabel = new JLabel("Treasures: 0/0");
         treasureLabel.setFont(labelFont);
 
-        hintButton = new JButton("Hint (Cost: 3)");
-        hintButton.setFont(labelFont);
+        hintBFSButton = new JButton("BFS Hint (Cost: 3)");
+        hintBFSButton.setFont(labelFont);
+
+        hintAStarButton = new JButton("A* Hint (Cost: 3)");
+        hintAStarButton.setFont(labelFont);
 
         resetButton = new JButton("New Game");
         resetButton.setFont(labelFont);
 
         // Add tooltip to buttons
-        hintButton.setToolTipText("Shows the path to the nearest treasure");
+        hintBFSButton.setToolTipText("Shows the path to the nearest treasure using BFS");
+        hintAStarButton.setToolTipText("Shows the path to the nearest treasure using A* search");
         resetButton.setToolTipText("Restart the game with a new map");
 
-        controlPanel.add(scoreLabel);
-        controlPanel.add(treasureLabel);
-        controlPanel.add(hintButton);
-        controlPanel.add(resetButton);
+        // Set distinct colors for the buttons to match their hint types
+        hintBFSButton.setBackground(new Color(100, 200, 100)); // Light green for BFS
+        hintBFSButton.setForeground(Color.BLACK);
+        hintAStarButton.setBackground(new Color(100, 150, 250)); // Light blue for A*
+        hintAStarButton.setForeground(Color.BLACK);
+
+        // Add game info to a separate panel
+        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        infoPanel.add(scoreLabel);
+        infoPanel.add(treasureLabel);
+
+        // Add buttons to the button panel
+        buttonPanel.add(hintBFSButton);
+        buttonPanel.add(hintAStarButton);
+        buttonPanel.add(resetButton);
+
+        // Add panels to the control panel
+        controlPanel.add(infoPanel, BorderLayout.NORTH);
+        controlPanel.add(statsPanel, BorderLayout.CENTER);
+        controlPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         // Add panels to frame
         gameScreen.add(gamePanel, BorderLayout.CENTER);
@@ -142,6 +174,25 @@ public class GameView extends JFrame {
 
         // Request focus for keyboard input
         gamePanel.requestFocusInWindow();
+    }
+
+    /**
+     * Updates the algorithm statistics display.
+     * @param isBFS true if BFS algorithm was used, false for A*
+     * @param cellsExplored number of cells explored by the algorithm
+     * @param pathLength length of the found path
+     */
+    public void updateStatistics(boolean isBFS, int cellsExplored, int pathLength) {
+        String algorithm = isBFS ? "BFS" : "A*";
+        statsLabel.setText(String.format("%s: Explored %d cells, Path length: %d",
+                algorithm, cellsExplored, pathLength));
+
+        // Highlight the label based on algorithm type
+        if (isBFS) {
+            statsLabel.setForeground(new Color(0, 100, 0)); // Dark green for BFS
+        } else {
+            statsLabel.setForeground(new Color(0, 0, 150)); // Dark blue for A*
+        }
     }
 
     /**
@@ -217,10 +268,17 @@ public class GameView extends JFrame {
     }
 
     /**
-     * Adds action listener to the hint button.
+     * Adds action listener to the BFS hint button.
      */
-    public void addHintButtonListener(ActionListener listener) {
-        hintButton.addActionListener(listener);
+    public void addHintBFSButtonListener(ActionListener listener) {
+        hintBFSButton.addActionListener(listener);
+    }
+
+    /**
+     * Adds action listener to the A* hint button.
+     */
+    public void addHintAStarButtonListener(ActionListener listener) {
+        hintAStarButton.addActionListener(listener);
     }
 
     /**
@@ -235,5 +293,13 @@ public class GameView extends JFrame {
      */
     public void addStartButtonListener(ActionListener listener) {
         welcomeScreen.addStartButtonListener(listener);
+    }
+
+    /**
+     * Legacy method to maintain backward compatibility.
+     * Adds action listener to the BFS hint button.
+     */
+    public void addHintButtonListener(ActionListener listener) {
+        addHintBFSButtonListener(listener);
     }
 }

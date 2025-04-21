@@ -41,7 +41,11 @@ public class WelcomeScreen extends JPanel {
                 "<html>• <span style='color:blue'>Blue</span>: Player</html>",
                 "<html>• <span style='color:black'>Black</span>: Obstacle</html>",
                 "<html>• <span style='color:#CCCC00'>Yellow</span>: Treasure</html>",
-                "<html>• <span style='color:green'>Green</span>: Path hint</html>",
+                "<html>• <span style='color:#64C864'>Green</span>: BFS path hint</html>",
+                "<html>• <span style='color:#6496FA'>Blue</span>: A* path hint</html>",
+                "<html><b>Hint Options:</b></html>",
+                "<html>• <b>BFS Hint:</b> Uses Breadth-First Search algorithm to find the shortest path.</html>",
+                "<html>• <b>A* Hint:</b> Uses A* Search algorithm with Manhattan distance heuristic.</html>",
                 "<html><b>Game Over:</b> The game ends when you collect all treasures or run out of points.</html>"
         };
 

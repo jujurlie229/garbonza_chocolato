@@ -33,6 +33,9 @@ public class AnimationManager {
     private int obstacleHitFrame = 0;
     private Point lastHitObstacle = null;
 
+    // Track hint algorithm type
+    private boolean isAStarPathActive = false;
+
     // Random generator for effects
     private Random random = new Random();
 
@@ -106,13 +109,22 @@ public class AnimationManager {
     }
 
     /**
-     * Starts the hint path animation.
+     * Starts the hint path animation with specified algorithm.
      */
     public void startHintPathAnimation() {
         if (!hintPathTimer.isRunning()) {
             hintPathVisible = true;
             hintPathTimer.start();
         }
+    }
+
+    /**
+     * Starts the hint path animation with specified algorithm.
+     * @param isAStar true if A* algorithm is used, false for BFS
+     */
+    public void startHintPathAnimation(boolean isAStar) {
+        isAStarPathActive = isAStar;
+        startHintPathAnimation();
     }
 
     /**
@@ -159,11 +171,20 @@ public class AnimationManager {
                     // Draw path hint animation (if active)
                     if (model.getCell(x, y) == Cell.PATH_HINT) {
                         if (hintPathVisible) {
-                            g2d.setColor(Color.GREEN);
+                            // Use different colors based on algorithm
+                            if (isAStarPathActive) {
+                                g2d.setColor(new Color(100, 150, 250)); // Light blue for A*
+                            } else {
+                                g2d.setColor(new Color(100, 200, 100)); // Light green for BFS
+                            }
                             g2d.fillRect(cellX, cellY, cellSize, cellSize);
 
-                            // Draw arrow pattern
-                            g2d.setColor(new Color(0, 100, 0));
+                            // Draw arrow pattern with a color matching the algorithm
+                            if (isAStarPathActive) {
+                                g2d.setColor(new Color(0, 0, 150)); // Darker blue for A*
+                            } else {
+                                g2d.setColor(new Color(0, 100, 0)); // Dark green for BFS
+                            }
                             g2d.drawLine(cellX + cellSize/4, cellY + cellSize/2,
                                     cellX + 3*cellSize/4, cellY + cellSize/2);
                             g2d.drawLine(cellX + 3*cellSize/4, cellY + cellSize/2,
@@ -171,7 +192,12 @@ public class AnimationManager {
                             g2d.drawLine(cellX + 3*cellSize/4, cellY + cellSize/2,
                                     cellX + 2*cellSize/3, cellY + 2*cellSize/3);
                         } else {
-                            g2d.setColor(new Color(200, 255, 200));
+                            // Use lighter versions of the same color scheme for blinking
+                            if (isAStarPathActive) {
+                                g2d.setColor(new Color(200, 220, 255)); // Very light blue for A*
+                            } else {
+                                g2d.setColor(new Color(200, 255, 200)); // Very light green for BFS
+                            }
                             g2d.fillRect(cellX, cellY, cellSize, cellSize);
                         }
                     }
@@ -232,6 +258,14 @@ public class AnimationManager {
             int sparkleSize = Math.max(2, cellSize / 10);
             g2d.fillOval(sparkleX - sparkleSize/2, sparkleY - sparkleSize/2, sparkleSize, sparkleSize);
         }
+    }
+
+    /**
+     * Sets the active hint path algorithm type.
+     * @param isAStar true for A* algorithm, false for BFS
+     */
+    public void setAStarPathActive(boolean isAStar) {
+        this.isAStarPathActive = isAStar;
     }
 
     /**
