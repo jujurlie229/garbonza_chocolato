@@ -17,12 +17,14 @@ public class GameModel {
 
     // Game state
     private Cell[][] grid;
+    private Cell[][] visibleGrid; // What the player can see
     private Point playerPosition;
     private int score;
     private int treasuresFound;
     private List<Point> treasureLocations;
     private List<Point> currentPath;
     private boolean hintUsedSinceLastMove; // Tracks if hint was already used before moving
+    private List<Point> revealedObstacles; // Track obstacles that have been revealed
 
     // Search algorithm statistics
     private int bfsCellsExplored;
@@ -37,8 +39,10 @@ public class GameModel {
      */
     public GameModel() {
         grid = new Cell[GRID_SIZE][GRID_SIZE];
+        visibleGrid = new Cell[GRID_SIZE][GRID_SIZE];
         treasureLocations = new ArrayList<>();
         currentPath = new ArrayList<>();
+        revealedObstacles = new ArrayList<>();
         hintUsedSinceLastMove = false;
         resetGame();
     }
@@ -53,6 +57,7 @@ public class GameModel {
         bfsCellsExplored = 0;
         aStarCellsExplored = 0;
         lastPathLength = 0;
+        revealedObstacles.clear();
         generateMap();
     }
 
@@ -64,12 +69,14 @@ public class GameModel {
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 grid[i][j] = Cell.EMPTY;
+                visibleGrid[i][j] = Cell.EMPTY; // All cells start as empty in visible grid
             }
         }
 
         // Place player in the center
         playerPosition = new Point(GRID_SIZE / 2, GRID_SIZE / 2);
         grid[playerPosition.getY()][playerPosition.getX()] = Cell.PLAYER;
+        visibleGrid[playerPosition.getY()][playerPosition.getX()] = Cell.PLAYER;
 
         // Place random obstacles
         Random rand = new Random();
@@ -82,6 +89,7 @@ public class GameModel {
             // Don't place obstacle on player or existing obstacle
             if ((x != playerPosition.getX() || y != playerPosition.getY()) && grid[y][x] == Cell.EMPTY) {
                 grid[y][x] = Cell.OBSTACLE;
+                // Don't add to visible grid - obstacles are hidden initially
             }
         }
 
@@ -117,6 +125,7 @@ public class GameModel {
 
             grid[y][x] = Cell.TREASURE;
             treasureLocations.add(new Point(x, y));
+            // Don't add to visible grid - treasures are hidden initially
         }
     }
 
@@ -190,15 +199,24 @@ public class GameModel {
         }
 
         boolean foundTreasure = false;
+        boolean hitObstacle = false;
+        Point obstaclePoint = null;
 
         // Check if the move is valid
         if (isValidPosition(newX, newY)) {
             if (grid[newY][newX] == Cell.OBSTACLE) {
                 // Player hit a wall
                 score -= 10;
+                hitObstacle = true;
+                obstaclePoint = new Point(newX, newY);
+
+                // Reveal the obstacle in the visible grid
+                visibleGrid[newY][newX] = Cell.OBSTACLE;
+                revealedObstacles.add(obstaclePoint);
             } else {
                 // Update player position
                 grid[playerPosition.getY()][playerPosition.getX()] = Cell.EMPTY;
+                visibleGrid[playerPosition.getY()][playerPosition.getX()] = Cell.EMPTY;
 
                 if (grid[newY][newX] == Cell.TREASURE) {
                     // Player found a treasure
@@ -207,10 +225,14 @@ public class GameModel {
                     int finalNewY = newY;
                     treasureLocations.removeIf(p -> p.getX() == finalNewX && p.getY() == finalNewY);
                     foundTreasure = true;
+
+                    // Make the treasure visible in the visible grid before changing to player
+                    visibleGrid[newY][newX] = Cell.TREASURE;
                 }
 
                 playerPosition = new Point(newX, newY);
                 grid[newY][newX] = Cell.PLAYER;
+                visibleGrid[newY][newX] = Cell.PLAYER;
 
                 // Moving costs 1 score point
                 score -= 1;
@@ -225,15 +247,15 @@ public class GameModel {
      */
     public void clearPathHints() {
         for (Point p : currentPath) {
-            if (grid[p.getY()][p.getX()] == Cell.PATH_HINT) {
-                grid[p.getY()][p.getX()] = Cell.EMPTY;
+            if (visibleGrid[p.getY()][p.getX()] == Cell.PATH_HINT) {
+                visibleGrid[p.getY()][p.getX()] = Cell.EMPTY;
             }
         }
         currentPath.clear();
     }
 
     /**
-     * Finds and displays the shortest path to the nearest treasure using BFS.
+     * Shows only the next step towards the nearest treasure using BFS.
      * Returns true if a path was found.
      */
     public boolean showHintBFS() {
@@ -258,14 +280,20 @@ public class GameModel {
             }
         }
 
-        // Mark the path on the map
-        if (shortestPath != null) {
-            for (Point p : shortestPath) {
-                if (grid[p.getY()][p.getX()] == Cell.EMPTY) {
-                    grid[p.getY()][p.getX()] = Cell.PATH_HINT;
-                    currentPath.add(p);
-                }
+        // Mark only the first step of the path on the map
+        if (shortestPath != null && !shortestPath.isEmpty()) {
+            Point nextStep = shortestPath.get(0);
+
+            // Only show the hint if the cell is not an obstacle or already revealed
+            if (grid[nextStep.getY()][nextStep.getX()] != Cell.OBSTACLE ||
+                    visibleGrid[nextStep.getY()][nextStep.getX()] == Cell.OBSTACLE) {
+
+                visibleGrid[nextStep.getY()][nextStep.getX()] = Cell.PATH_HINT;
+                currentPath.add(nextStep);
             }
+
+            // Store the full path length for statistics
+            lastPathLength = shortestPath.size();
 
             // Using hint costs 3 points - but only charge once if player is comparing algorithms
             if (!hintUsedSinceLastMove) {
@@ -280,7 +308,7 @@ public class GameModel {
     }
 
     /**
-     * Finds and displays the shortest path to the nearest treasure using A* search.
+     * Shows only the next step towards the nearest treasure using A* search.
      * Returns true if a path was found.
      */
     public boolean showHintAStar() {
@@ -305,14 +333,20 @@ public class GameModel {
             }
         }
 
-        // Mark the path on the map
-        if (shortestPath != null) {
-            for (Point p : shortestPath) {
-                if (grid[p.getY()][p.getX()] == Cell.EMPTY) {
-                    grid[p.getY()][p.getX()] = Cell.PATH_HINT;
-                    currentPath.add(p);
-                }
+        // Mark only the first step of the path on the map
+        if (shortestPath != null && !shortestPath.isEmpty()) {
+            Point nextStep = shortestPath.get(0);
+
+            // Only show the hint if the cell is not an obstacle or already revealed
+            if (grid[nextStep.getY()][nextStep.getX()] != Cell.OBSTACLE ||
+                    visibleGrid[nextStep.getY()][nextStep.getX()] == Cell.OBSTACLE) {
+
+                visibleGrid[nextStep.getY()][nextStep.getX()] = Cell.PATH_HINT;
+                currentPath.add(nextStep);
             }
+
+            // Store the full path length for statistics
+            lastPathLength = shortestPath.size();
 
             // Using hint costs 3 points - but only charge once if player is comparing algorithms
             if (!hintUsedSinceLastMove) {
@@ -495,7 +529,11 @@ public class GameModel {
     // Getters and setters
 
     public Cell getCell(int x, int y) {
-        return grid[y][x];
+        return visibleGrid[y][x]; // Return the visible grid cell
+    }
+
+    public Cell getRealCell(int x, int y) {
+        return grid[y][x]; // Return the actual grid cell (for internal use)
     }
 
     public int getScore() {
@@ -520,6 +558,28 @@ public class GameModel {
 
     public Point getPlayerPosition() {
         return playerPosition;
+    }
+
+    /**
+     * Reveals a treasure at the specified location.
+     * Used when player discovers a treasure.
+     */
+    public void revealTreasure(int x, int y) {
+        if (isValidPosition(x, y) && grid[y][x] == Cell.TREASURE) {
+            visibleGrid[y][x] = Cell.TREASURE;
+        }
+    }
+
+    /**
+     * Check if the position contains a revealed obstacle
+     */
+    public boolean isRevealedObstacle(int x, int y) {
+        for (Point p : revealedObstacles) {
+            if (p.getX() == x && p.getY() == y) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

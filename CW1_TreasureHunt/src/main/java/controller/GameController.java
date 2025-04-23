@@ -23,6 +23,9 @@ public class GameController {
         this.model = model;
         this.view = view;
 
+        // Set controller reference in view for popup dialogs
+        view.setController(this);
+
         // Get animation manager from view
         this.animationManager = view.getAnimationManager();
 
@@ -91,6 +94,11 @@ public class GameController {
      * Handles keyboard input for player movement.
      */
     private void handleKeyPress(int keyCode) {
+        // Ignore keypresses if game is not in progress
+        if (!isGameInProgress) {
+            return;
+        }
+
         boolean foundTreasure = false;
         int oldX = model.getPlayerPosition().getX();
         int oldY = model.getPlayerPosition().getY();
@@ -147,9 +155,21 @@ public class GameController {
             }
         }
 
-        // If treasure was found, start collection animation
+        // If treasure was found, start collection animation and show popup
         if (foundTreasure) {
             animationManager.startTreasureCollectAnimation(newX, newY);
+
+            // Update the view before showing the popup
+            updateView();
+
+            // Pause the game while showing the popup
+            isGameInProgress = false;
+
+            // Show treasure found popup
+            view.showTreasureFoundMessage(model.getTreasuresFound(), model.getTreasuresTotal());
+
+            // No need to update view or check game status here - it will be done after the popup is closed
+            return;
         }
 
         // Update the view
@@ -165,7 +185,7 @@ public class GameController {
     private void handleHintBFSRequest() {
         // Only show hint if we have enough score and treasures remain
         if (model.getScore() >= 3 && !model.allTreasuresFound()) {
-            // Clear previous hints first to ensure new path is shown
+            // Clear previous hints first
             model.clearPathHints();
             animationManager.stopHintPathAnimation();
 
@@ -199,7 +219,7 @@ public class GameController {
     private void handleHintAStarRequest() {
         // Only show hint if we have enough score and treasures remain
         if (model.getScore() >= 3 && !model.allTreasuresFound()) {
-            // Clear previous hints first to ensure new path is shown
+            // Clear previous hints first
             model.clearPathHints();
             animationManager.stopHintPathAnimation();
 
@@ -271,5 +291,16 @@ public class GameController {
      */
     private void updateView() {
         view.updateView(model);
+    }
+
+    /**
+     * Resumes the game after it was paused (e.g., after a popup dialog)
+     */
+    public void resumeGame() {
+        isGameInProgress = true;
+
+        // Update view and check game status after resuming
+        updateView();
+        checkGameStatus();
     }
 }

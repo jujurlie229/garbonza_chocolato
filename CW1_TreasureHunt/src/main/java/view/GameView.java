@@ -1,5 +1,6 @@
 package view;
 
+import controller.GameController;
 import model.GameModel;
 
 import javax.swing.*;
@@ -25,6 +26,7 @@ public class GameView extends JFrame {
     private JButton hintBFSButton;
     private JButton hintAStarButton;
     private JButton resetButton;
+    private GameController controller;
 
     // Constants
     private static final String WELCOME_CARD = "welcome";
@@ -160,7 +162,7 @@ public class GameView extends JFrame {
     }
 
     /**
-     * Updates the UI to reflect the current game state.
+     * Updates the view to reflect the current game state.
      */
     public void updateView(GameModel model) {
         // Update labels
@@ -254,6 +256,72 @@ public class GameView extends JFrame {
     }
 
     /**
+     * Shows a treasure found message with a continue button.
+     */
+    public void showTreasureFoundMessage(int treasuresFound, int treasuresTotal) {
+        // Create a modal dialog for treasure found
+        JDialog dialog = new JDialog(this, "Treasure Found!", true);
+        dialog.setLayout(new BorderLayout());
+
+        // Create content panel
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Create treasure found text with golden color
+        JLabel titleLabel = new JLabel("Treasure Found!");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setForeground(new Color(218, 165, 32)); // Gold color
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Create progress message
+        JLabel progressLabel = new JLabel(
+                treasuresFound + "/" + treasuresTotal + " treasure" +
+                        (treasuresTotal > 1 ? "s" : "") + " has been found");
+        progressLabel.setFont(new Font("Arial", Font.PLAIN, 18));
+        progressLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Add message to content panel
+        content.add(Box.createVerticalGlue());
+        content.add(titleLabel);
+        content.add(Box.createVerticalStrut(20));
+        content.add(progressLabel);
+        content.add(Box.createVerticalStrut(30));
+
+        // Create continue button
+        JButton continueButton = new JButton("Continue");
+        continueButton.setFont(new Font("Arial", Font.BOLD, 16));
+        continueButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // When continue button is pressed, resume the game
+        continueButton.addActionListener(e -> {
+            dialog.dispose();
+
+            // Request focus back to game panel to continue gameplay
+            gamePanel.requestFocusInWindow();
+
+            // Resume the game in GameController
+            if (controller != null) {
+                controller.resumeGame();
+            }
+        });
+
+        content.add(continueButton);
+        content.add(Box.createVerticalGlue());
+
+        // Add content to dialog
+        dialog.add(content, BorderLayout.CENTER);
+
+        // Set dialog properties
+        dialog.setSize(350, 250);
+        dialog.setLocationRelativeTo(this);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        // Show the dialog
+        dialog.setVisible(true);
+    }
+
+    /**
      * Gets the animation manager from the game panel.
      */
     public AnimationManager getAnimationManager() {
@@ -302,4 +370,12 @@ public class GameView extends JFrame {
     public void addHintButtonListener(ActionListener listener) {
         addHintBFSButtonListener(listener);
     }
+
+    /**
+     * Sets the controller reference for popup dialogs
+     */
+    public void setController(GameController controller) {
+        this.controller = controller;
+    }
+
 }
