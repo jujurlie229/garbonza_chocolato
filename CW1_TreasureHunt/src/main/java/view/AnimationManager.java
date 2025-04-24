@@ -11,6 +11,7 @@ import java.util.Random;
 
 /**
  * Manages various animations in the game.
+ * Updated with navy and gold minimalist theme.
  */
 public class AnimationManager {
     // Animation timers
@@ -154,18 +155,33 @@ public class AnimationManager {
                 for (int x = 0; x < GameModel.GRID_SIZE; x++) {
                     int cellX = x * cellSize;
                     int cellY = y * cellSize;
+                    int margin = 1; // Matching the game panel cell margin
 
                     // Draw player with pulse effect
                     if (model.getCell(x, y) == Cell.PLAYER) {
-                        float[] hsb = Color.RGBtoHSB(0, 0, 255, null);
+                        // Calculate pulse color based on the base player color
+                        Color baseColor = Theme.PLAYER_COLOR;
+                        float[] hsb = Color.RGBtoHSB(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), null);
                         Color pulseColor = Color.getHSBColor(hsb[0], hsb[1], playerPulseValue);
-                        g2d.setColor(pulseColor);
-                        g2d.fillRect(cellX, cellY, cellSize, cellSize);
 
-                        // Draw player icon
-                        g2d.setColor(Color.WHITE);
-                        int margin = cellSize / 4;
-                        g2d.fillOval(cellX + margin, cellY + margin, cellSize - 2*margin, cellSize - 2*margin);
+                        g2d.setColor(pulseColor);
+                        g2d.fillRoundRect(
+                                cellX + margin,
+                                cellY + margin,
+                                cellSize - (2 * margin),
+                                cellSize - (2 * margin),
+                                6, 6 // More rounded for player
+                        );
+
+                        // Draw player icon - minimalist dot
+                        g2d.setColor(Theme.TEXT_LIGHT);
+                        int iconMargin = cellSize / 3;
+                        g2d.fillOval(
+                                cellX + iconMargin,
+                                cellY + iconMargin,
+                                cellSize - (2 * iconMargin),
+                                cellSize - (2 * iconMargin)
+                        );
                     }
 
                     // Draw path hint animation (if active)
@@ -173,48 +189,99 @@ public class AnimationManager {
                         if (hintPathVisible) {
                             // Use different colors based on algorithm
                             if (isAStarPathActive) {
-                                g2d.setColor(new Color(100, 150, 250)); // Light blue for A*
+                                g2d.setColor(Theme.PATH_HINT_ASTAR_COLOR); // Blue for A*
                             } else {
-                                g2d.setColor(new Color(100, 200, 100)); // Light green for BFS
+                                g2d.setColor(Theme.PATH_HINT_BFS_COLOR); // Green for BFS
                             }
-                            g2d.fillRect(cellX, cellY, cellSize, cellSize);
 
-                            // Draw arrow pattern with a color matching the algorithm
+                            g2d.fillRoundRect(
+                                    cellX + margin,
+                                    cellY + margin,
+                                    cellSize - (2 * margin),
+                                    cellSize - (2 * margin),
+                                    4, 4
+                            );
+
+                            // Draw minimalist arrow
                             if (isAStarPathActive) {
-                                g2d.setColor(new Color(0, 0, 150)); // Darker blue for A*
+                                g2d.setColor(new Color(50, 100, 200)); // Darker blue
                             } else {
-                                g2d.setColor(new Color(0, 100, 0)); // Dark green for BFS
+                                g2d.setColor(new Color(50, 150, 50)); // Darker green
                             }
-                            g2d.drawLine(cellX + cellSize/4, cellY + cellSize/2,
-                                    cellX + 3*cellSize/4, cellY + cellSize/2);
-                            g2d.drawLine(cellX + 3*cellSize/4, cellY + cellSize/2,
-                                    cellX + 2*cellSize/3, cellY + cellSize/3);
-                            g2d.drawLine(cellX + 3*cellSize/4, cellY + cellSize/2,
-                                    cellX + 2*cellSize/3, cellY + 2*cellSize/3);
+
+                            // Draw a simple directional triangle
+                            int[] xPoints = {
+                                    cellX + cellSize/5,
+                                    cellX + cellSize*4/5,
+                                    cellX + cellSize/2
+                            };
+                            int[] yPoints = {
+                                    cellY + cellSize/2,
+                                    cellY + cellSize/2,
+                                    cellY + cellSize*3/4
+                            };
+                            g2d.fillPolygon(xPoints, yPoints, 3);
+
                         } else {
                             // Use lighter versions of the same color scheme for blinking
                             if (isAStarPathActive) {
-                                g2d.setColor(new Color(200, 220, 255)); // Very light blue for A*
+                                g2d.setColor(new Color(180, 200, 255)); // Very light blue for A*
                             } else {
-                                g2d.setColor(new Color(200, 255, 200)); // Very light green for BFS
+                                g2d.setColor(new Color(180, 255, 180)); // Very light green for BFS
                             }
-                            g2d.fillRect(cellX, cellY, cellSize, cellSize);
+
+                            g2d.fillRoundRect(
+                                    cellX + margin,
+                                    cellY + margin,
+                                    cellSize - (2 * margin),
+                                    cellSize - (2 * margin),
+                                    4, 4
+                            );
                         }
                     }
 
                     // Draw treasure with sparkle effect
                     if (model.getCell(x, y) == Cell.TREASURE) {
                         // Base treasure
-                        g2d.setColor(Color.YELLOW);
-                        g2d.fillRect(cellX, cellY, cellSize, cellSize);
+                        g2d.setColor(Theme.TREASURE_COLOR);
+                        g2d.fillRoundRect(
+                                cellX + margin,
+                                cellY + margin,
+                                cellSize - (2 * margin),
+                                cellSize - (2 * margin),
+                                4, 4
+                        );
 
-                        // Treasure chest icon
-                        g2d.setColor(new Color(139, 69, 19)); // Brown
-                        g2d.fillRect(cellX + cellSize/4, cellY + cellSize/3,
-                                cellSize/2, cellSize/2);
-                        g2d.setColor(new Color(255, 215, 0)); // Gold
-                        g2d.fillRect(cellX + cellSize/4, cellY + cellSize/3,
-                                cellSize/2, cellSize/4);
+                        // Treasure icon - minimalist gold coin/diamond
+                        int iconSize = cellSize / 2;
+                        int iconX = cellX + (cellSize - iconSize) / 2;
+                        int iconY = cellY + (cellSize - iconSize) / 2;
+
+                        // Diamond shape
+                        int[] xPoints = {
+                                iconX + iconSize/2,
+                                iconX + iconSize,
+                                iconX + iconSize/2,
+                                iconX
+                        };
+                        int[] yPoints = {
+                                iconY,
+                                iconY + iconSize/2,
+                                iconY + iconSize,
+                                iconY + iconSize/2
+                        };
+
+                        g2d.setColor(Theme.SOFT_GOLD);
+                        g2d.fillPolygon(xPoints, yPoints, 4);
+
+                        // Highlight
+                        g2d.setColor(Color.WHITE);
+                        g2d.drawLine(
+                                iconX + iconSize/4,
+                                iconY + iconSize/4,
+                                iconX + iconSize/2,
+                                iconY + iconSize/2
+                        );
 
                         // Add sparkles
                         Point treasurePos = new Point(x, y);
@@ -234,8 +301,14 @@ public class AnimationManager {
                         int alpha = 255 - (obstacleHitFrame * 25);
                         if (alpha < 0) alpha = 0;
 
-                        g2d.setColor(new Color(255, 0, 0, alpha));
-                        g2d.fillRect(cellX, cellY, cellSize, cellSize);
+                        g2d.setColor(new Color(255, 70, 70, alpha));
+                        g2d.fillRoundRect(
+                                cellX + margin,
+                                cellY + margin,
+                                cellSize - (2 * margin),
+                                cellSize - (2 * margin),
+                                4, 4
+                        );
                     }
                 }
             }

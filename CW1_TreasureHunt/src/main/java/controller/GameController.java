@@ -248,13 +248,6 @@ public class GameController {
     }
 
     /**
-     * Legacy method to maintain backward compatibility.
-     */
-    private void handleHintRequest() {
-        handleHintBFSRequest();
-    }
-
-    /**
      * Checks if the game is over and shows appropriate message.
      */
     private void checkGameStatus() {

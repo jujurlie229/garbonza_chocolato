@@ -1,78 +1,148 @@
 package view;
 
+import model.GameModel;
+
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
-/**
- * Welcome screen class that displays the game rules at startup.
- */
 public class WelcomeScreen extends JPanel {
     private JButton startButton;
 
-    /**
-     * Constructor initializes the welcome screen with game rules.
-     */
     public WelcomeScreen() {
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(600, 500));
+        // Match the game panel dimensions
+        setPreferredSize(new Dimension(
+                GameModel.GRID_SIZE * GamePanel.getCellSize(),
+                GameModel.GRID_SIZE * GamePanel.getCellSize()
+        ));
+        setBackground(Theme.NAVY);
 
         // Title panel
         JPanel titlePanel = new JPanel();
+        titlePanel.setBackground(Theme.NAVY);
+        titlePanel.setBorder(new EmptyBorder(15, 0, 5, 0));
+
         JLabel titleLabel = new JLabel("Treasure Hunt");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 26)); // Slightly smaller title
+        titleLabel.setForeground(Theme.GOLD);
         titlePanel.add(titleLabel);
 
         // Rules panel
         JPanel rulesPanel = new JPanel();
+        rulesPanel.setBackground(Theme.NAVY);
         rulesPanel.setLayout(new BoxLayout(rulesPanel, BoxLayout.Y_AXIS));
-        rulesPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        rulesPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(5, 15, 5, 15),
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(Theme.GOLD, 1),
+                        BorderFactory.createEmptyBorder(10, 15, 10, 15)
+                )
+        ));
 
+        // Rules with styling - more compact format
         String[] rules = {
-                "<html><h2>Game Rules:</h2></html>",
-                "<html><b>Objective:</b> Find all 3 treasures before running out of points.</html>",
-                "<html><b>Controls:</b> Use arrow keys to move your character (blue square).</html>",
-                "<html><b>Fog of War:</b> The map is hidden - you must explore to discover treasures and obstacles.</html>",
-                "<html><b>Scoring:</b></html>",
-                "<html>• You start with 100 points.</html>",
-                "<html>• Each move costs 1 point.</html>",
-                "<html>• Hitting an obstacle costs 10 points and reveals the obstacle.</html>",
-                "<html>• Using a hint costs 3 points and shows 1 step toward the closest treasure.</html>",
-                "<html><b>Map Elements:</b></html>",
-                "<html>• <span style='color:blue'>Blue</span>: Player</html>",
-                "<html>• <span style='color:black'>Black</span>: Revealed Obstacle</html>",
-                "<html>• <span style='color:#CCCC00'>Yellow</span>: Discovered Treasure</html>",
-                "<html>• <span style='color:#64C864'>Green</span>: BFS hint (shows next step)</html>",
-                "<html>• <span style='color:#6496FA'>Blue</span>: A* hint (shows next step)</html>",
-                "<html><b>Hint Options:</b></html>",
-                "<html>• <b>BFS Hint:</b> Shows one step using Breadth-First Search algorithm.</html>",
-                "<html>• <b>A* Hint:</b> Shows one step using A* Search algorithm with Manhattan distance heuristic.</html>",
-                "<html><b>Game Over:</b> The game ends when you collect all treasures or run out of points.</html>"
+                "<html><h3 style='color:#DAA520;margin-bottom:5px;font-size:18px'>Game Rules</h3></html>",
+                "<html><b style='color:#DAA520;'>Objective:</b> <span style='color:white;'>Find all treasures before running out of points</span></html>",
+                "<html><b style='color:#DAA520;'>Controls:</b> <span style='color:white;'>Arrow keys to move</span> | <b style='color:#DAA520;'>Scoring:</b> <span style='color:white;'>Start: 100 pts</span></html>",
+                "<html><span style='color:white;'>• Move: -1 pt • Hit obstacle: -10 pts • Hint: -3 pts</span></html>",
+
+                "<html><b style='color:#DAA520;margin-top:5px;'>Map Elements:</b></html>",
+                "<html><span style='color:#4682B4;'>■</span> <span style='color:white;'>Player</span></html>",
+                "<html><span style='color:#192841;'>■</span> <span style='color:white;'>Obstacle</span></html>",
+                "<html><span style='color:#DAA520;'>■</span> <span style='color:white;'>Treasure</span></html>",
+                "<html><span style='color:#78C878;'>■</span> <span style='color:white;'>BFS hint</span></html>",
+                "<html><span style='color:#6496FA;'>■</span> <span style='color:white;'>A* hint</span></html>",
+
+                "<html><b style='color:#DAA520;margin-top:5px;'>Hint Types:</b></html>",
+                "<html><span style='color:white;'>• BFS: Breadth-First Search - explores all directions equally</span></html>",
+                "<html><span style='color:white;'>• A*: Uses Manhattan distance heuristic - more directed</span></html>",
+
+                "<html><b style='color:#DAA520;margin-top:5px;'>Game End:</b> <span style='color:white;'>All treasures found or out of points</span></html>"
         };
 
         for (String rule : rules) {
             JLabel ruleLabel = new JLabel(rule);
+            ruleLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+            ruleLabel.setForeground(Theme.TEXT_LIGHT);
             ruleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            ruleLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+            ruleLabel.setBorder(BorderFactory.createEmptyBorder(3, 0, 3, 0));
             rulesPanel.add(ruleLabel);
         }
 
         // Start button panel
         JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(Theme.NAVY);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 15, 0));
+
         startButton = new JButton("Start Game");
-        startButton.setFont(new Font("Arial", Font.BOLD, 16));
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+        startButton.setFont(new Font("SansSerif", Font.BOLD, 16));
+        startButton.setBackground(Theme.LIGHT_NAVY);
+        startButton.setForeground(Theme.GOLD);
+        startButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        startButton.setFocusPainted(false);
+        startButton.setBorder(new CompoundBorder(
+                new LineBorder(Theme.GOLD, 2),
+                new EmptyBorder(6, 20, 6, 20)
+        ));
+
+        // Add hover effect to start button
+        startButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                startButton.setBackground(Theme.DARK_NAVY);
+                startButton.setBorder(new CompoundBorder(
+                        new LineBorder(Theme.SOFT_GOLD, 2),
+                        new EmptyBorder(8, 25, 8, 25)
+                ));
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                startButton.setBackground(Theme.LIGHT_NAVY);
+                startButton.setBorder(new CompoundBorder(
+                        new LineBorder(Theme.GOLD, 2),
+                        new EmptyBorder(8, 25, 8, 25)
+                ));
+            }
+        });
+
         buttonPanel.add(startButton);
 
         // Add all panels to main panel
         add(titlePanel, BorderLayout.NORTH);
-        add(new JScrollPane(rulesPanel), BorderLayout.CENTER);
+        add(new JScrollPane(rulesPanel) {
+            {
+                setBorder(null);
+                getViewport().setBackground(Theme.NAVY);
+                getVerticalScrollBar().setUI(new BasicScrollBarUI() {
+                    @Override
+                    protected void configureScrollBarColors() {
+                        this.thumbColor = Theme.LIGHT_NAVY;
+                        this.trackColor = Theme.NAVY;
+                    }
+
+                    @Override
+                    protected JButton createDecreaseButton(int orientation) {
+                        JButton button = super.createDecreaseButton(orientation);
+                        button.setBackground(Theme.LIGHT_NAVY);
+                        return button;
+                    }
+
+                    @Override
+                    protected JButton createIncreaseButton(int orientation) {
+                        JButton button = super.createIncreaseButton(orientation);
+                        button.setBackground(Theme.LIGHT_NAVY);
+                        return button;
+                    }
+                });
+            }
+        }, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
-    /**
-     * Add action listener to the start button.
-     */
     public void addStartButtonListener(ActionListener listener) {
         startButton.addActionListener(listener);
     }

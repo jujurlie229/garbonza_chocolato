@@ -10,19 +10,4 @@ public enum Cell {
     TREASURE,
     PATH_HINT;
 
-    /**
-     * Converts a cell type to its integer representation.
-     * Used for backward compatibility.
-     */
-    public int toInt() {
-        return this.ordinal();
-    }
-
-    /**
-     * Converts an integer to its corresponding Cell type.
-     * Used for backward compatibility.
-     */
-    public static Cell fromInt(int value) {
-        return Cell.values()[value];
-    }
 }

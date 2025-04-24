@@ -12,7 +12,7 @@ public class GameModel {
     public static final int GRID_SIZE = 20;
     public static final int NUM_TREASURES = 3;
     public static final int MIN_OBSTACLES = 10;
-    public static final int MAX_OBSTACLES = 150;
+    public static final int MAX_OBSTACLES = 100;
     public static final int INITIAL_SCORE = 100;
 
     // Game state
@@ -25,6 +25,7 @@ public class GameModel {
     private List<Point> currentPath;
     private boolean hintUsedSinceLastMove; // Tracks if hint was already used before moving
     private List<Point> revealedObstacles; // Track obstacles that have been revealed
+    private List<Point> discoveredTreasures; // Track treasures that have been found
 
     // Search algorithm statistics
     private int bfsCellsExplored;
@@ -43,6 +44,7 @@ public class GameModel {
         treasureLocations = new ArrayList<>();
         currentPath = new ArrayList<>();
         revealedObstacles = new ArrayList<>();
+        discoveredTreasures = new ArrayList<>();
         hintUsedSinceLastMove = false;
         resetGame();
     }
@@ -58,6 +60,7 @@ public class GameModel {
         aStarCellsExplored = 0;
         lastPathLength = 0;
         revealedObstacles.clear();
+        discoveredTreasures.clear();
         generateMap();
     }
 
@@ -214,22 +217,43 @@ public class GameModel {
                 visibleGrid[newY][newX] = Cell.OBSTACLE;
                 revealedObstacles.add(obstaclePoint);
             } else {
-                // Update player position
+                // Get the current cell in the old player position
+                Point oldPosition = new Point(playerPosition.getX(), playerPosition.getY());
+
+                // Update the visible grid at old position based on what's underneath
+                boolean isOnDiscoveredTreasure = false;
+                for (Point p : discoveredTreasures) {
+                    if (p.getX() == oldPosition.getX() && p.getY() == oldPosition.getY()) {
+                        visibleGrid[oldPosition.getY()][oldPosition.getX()] = Cell.TREASURE;
+                        isOnDiscoveredTreasure = true;
+                        break;
+                    }
+                }
+
+                if (!isOnDiscoveredTreasure) {
+                    visibleGrid[oldPosition.getY()][oldPosition.getX()] = Cell.EMPTY;
+                }
+
+                // Update the actual grid
                 grid[playerPosition.getY()][playerPosition.getX()] = Cell.EMPTY;
-                visibleGrid[playerPosition.getY()][playerPosition.getX()] = Cell.EMPTY;
 
                 if (grid[newY][newX] == Cell.TREASURE) {
                     // Player found a treasure
                     treasuresFound++;
+                    Point treasurePoint = new Point(newX, newY);
                     int finalNewX = newX;
                     int finalNewY = newY;
                     treasureLocations.removeIf(p -> p.getX() == finalNewX && p.getY() == finalNewY);
                     foundTreasure = true;
 
-                    // Make the treasure visible in the visible grid before changing to player
+                    // Add to discovered treasures list for tracking
+                    discoveredTreasures.add(treasurePoint);
+
+                    // Make the treasure visible in the visible grid before the player moves there
                     visibleGrid[newY][newX] = Cell.TREASURE;
                 }
 
+                // Update player position in the grid
                 playerPosition = new Point(newX, newY);
                 grid[newY][newX] = Cell.PLAYER;
                 visibleGrid[newY][newX] = Cell.PLAYER;
@@ -567,6 +591,7 @@ public class GameModel {
     public void revealTreasure(int x, int y) {
         if (isValidPosition(x, y) && grid[y][x] == Cell.TREASURE) {
             visibleGrid[y][x] = Cell.TREASURE;
+            discoveredTreasures.add(new Point(x, y));
         }
     }
 
@@ -575,6 +600,18 @@ public class GameModel {
      */
     public boolean isRevealedObstacle(int x, int y) {
         for (Point p : revealedObstacles) {
+            if (p.getX() == x && p.getY() == y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if the position contains a discovered treasure
+     */
+    public boolean isDiscoveredTreasure(int x, int y) {
+        for (Point p : discoveredTreasures) {
             if (p.getX() == x && p.getY() == y) {
                 return true;
             }
