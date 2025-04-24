@@ -12,7 +12,7 @@ public class GameModel {
     public static final int GRID_SIZE = 20;
     public static final int NUM_TREASURES = 3;
     public static final int MIN_OBSTACLES = 10;
-    public static final int MAX_OBSTACLES = 100;
+    public static final int MAX_OBSTACLES = 150;
     public static final int INITIAL_SCORE = 100;
 
     // Game state
