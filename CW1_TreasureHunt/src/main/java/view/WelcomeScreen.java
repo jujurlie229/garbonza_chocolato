@@ -15,14 +15,12 @@ public class WelcomeScreen extends JPanel {
 
     public WelcomeScreen() {
         setLayout(new BorderLayout());
-        // Match the game panel dimensions
         setPreferredSize(new Dimension(
                 GameModel.GRID_SIZE * GamePanel.getCellSize(),
                 GameModel.GRID_SIZE * GamePanel.getCellSize()
         ));
         setBackground(Theme.NAVY);
 
-        // Title panel
         JPanel titlePanel = new JPanel();
         titlePanel.setBackground(Theme.NAVY);
         titlePanel.setBorder(new EmptyBorder(15, 0, 5, 0));
@@ -32,7 +30,6 @@ public class WelcomeScreen extends JPanel {
         titleLabel.setForeground(Theme.GOLD);
         titlePanel.add(titleLabel);
 
-        // Rules panel
         JPanel rulesPanel = new JPanel();
         rulesPanel.setBackground(Theme.NAVY);
         rulesPanel.setLayout(new BoxLayout(rulesPanel, BoxLayout.Y_AXIS));
@@ -44,7 +41,7 @@ public class WelcomeScreen extends JPanel {
                 )
         ));
 
-        // Rules with styling - more compact format
+        // rules with styling - more compact format
         String[] rules = {
                 "<html><h3 style='color:#DAA520;margin-bottom:5px;font-size:18px'>Game Rules</h3></html>",
                 "<html><b style='color:#DAA520;'>Objective:</b> <span style='color:white;'>Find all treasures before running out of points</span></html>",
@@ -74,7 +71,6 @@ public class WelcomeScreen extends JPanel {
             rulesPanel.add(ruleLabel);
         }
 
-        // Start button panel
         JPanel buttonPanel = new JPanel();
         buttonPanel.setBackground(Theme.NAVY);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 15, 0));
@@ -90,7 +86,6 @@ public class WelcomeScreen extends JPanel {
                 new EmptyBorder(6, 20, 6, 20)
         ));
 
-        // Add hover effect to start button
         startButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 startButton.setBackground(Theme.DARK_NAVY);
@@ -111,7 +106,6 @@ public class WelcomeScreen extends JPanel {
 
         buttonPanel.add(startButton);
 
-        // Add all panels to main panel
         add(titlePanel, BorderLayout.NORTH);
         add(new JScrollPane(rulesPanel) {
             {

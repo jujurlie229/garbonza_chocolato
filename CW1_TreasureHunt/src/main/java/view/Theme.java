@@ -5,7 +5,6 @@ import java.awt.Font;
 
 /**
  * Defines the color theme and styles for the game UI.
- * Uses a minimalistic navy and gold theme.
  */
 public class Theme {
     // Main colors

@@ -10,23 +10,22 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * Manages various animations in the game.
- * Updated with navy and gold minimalist theme.
+ * manages various animations in the game.
  */
 public class AnimationManager {
-    // Animation timers
+    // animation timers
     private Timer playerMoveTimer;
     private Timer treasureCollectTimer;
     private Timer hintPathTimer;
     private Timer obstacleHitTimer;
 
-    // Animation properties
+    // animation properties
     private final float PLAYER_PULSE_MIN = 0.7f;
     private final float PLAYER_PULSE_MAX = 1.0f;
     private final int TREASURE_SPARKLE_COUNT = 5;
     private final int HINT_PATH_FRAMES = 10;
 
-    // Animation state
+    // animation state
     private float playerPulseValue = PLAYER_PULSE_MAX;
     private boolean playerPulseIncreasing = false;
     private Map<Point, Integer> treasureSparkles = new HashMap<>();
@@ -34,17 +33,15 @@ public class AnimationManager {
     private int obstacleHitFrame = 0;
     private Point lastHitObstacle = null;
 
-    // Track hint algorithm type
     private boolean isAStarPathActive = false;
 
-    // Random generator for effects
     private Random random = new Random();
 
     /**
-     * Constructor initializes animation timers.
+     * constructor initializes animation timers.
      */
     public AnimationManager() {
-        // Player pulse animation (continuous)
+        // player pulse animation (continuous)
         playerMoveTimer = new Timer(100, e -> {
             if (playerPulseIncreasing) {
                 playerPulseValue += 0.05f;
@@ -62,12 +59,10 @@ public class AnimationManager {
         });
         playerMoveTimer.start();
 
-        // Hint path animation
         hintPathTimer = new Timer(300, e -> {
             hintPathVisible = !hintPathVisible;
         });
 
-        // Obstacle hit animation
         obstacleHitTimer = new Timer(50, e -> {
             obstacleHitFrame++;
             if (obstacleHitFrame > 10) {
@@ -79,7 +74,7 @@ public class AnimationManager {
     }
 
     /**
-     * Starts the treasure collection animation at the specified location.
+     * starts the treasure collection animation at the specified location.
      */
     public void startTreasureCollectAnimation(int x, int y) {
         Point treasurePos = new Point(x, y);
@@ -110,7 +105,7 @@ public class AnimationManager {
     }
 
     /**
-     * Starts the hint path animation with specified algorithm.
+     * starts the hint path animation with specified algorithm.
      */
     public void startHintPathAnimation() {
         if (!hintPathTimer.isRunning()) {
@@ -120,8 +115,7 @@ public class AnimationManager {
     }
 
     /**
-     * Starts the hint path animation with specified algorithm.
-     * @param isAStar true if A* algorithm is used, false for BFS
+     * starts the hint path animation with specified algorithm.
      */
     public void startHintPathAnimation(boolean isAStar) {
         isAStarPathActive = isAStar;
@@ -129,7 +123,7 @@ public class AnimationManager {
     }
 
     /**
-     * Stops the hint path animation.
+     * stops the hint path animation.
      */
     public void stopHintPathAnimation() {
         hintPathTimer.stop();
@@ -137,7 +131,7 @@ public class AnimationManager {
     }
 
     /**
-     * Starts the obstacle hit animation.
+     * starts the obstacle hit animation.
      */
     public void startObstacleHitAnimation(int x, int y) {
         lastHitObstacle = new Point(x, y);
@@ -146,20 +140,18 @@ public class AnimationManager {
     }
 
     /**
-     * Draws animations on the provided graphics context.
+     * draws animations on the provided graphics context.
      */
     public void drawAnimations(Graphics2D g2d, GameModel model, int cellSize) {
-        // Draw player pulse effect
         if (model != null) {
             for (int y = 0; y < GameModel.GRID_SIZE; y++) {
                 for (int x = 0; x < GameModel.GRID_SIZE; x++) {
                     int cellX = x * cellSize;
                     int cellY = y * cellSize;
-                    int margin = 1; // Matching the game panel cell margin
+                    int margin = 1;
 
-                    // Draw player with pulse effect
                     if (model.getCell(x, y) == Cell.PLAYER) {
-                        // Calculate pulse color based on the base player color
+                        // calculate pulse color based on the base player color
                         Color baseColor = Theme.PLAYER_COLOR;
                         float[] hsb = Color.RGBtoHSB(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), null);
                         Color pulseColor = Color.getHSBColor(hsb[0], hsb[1], playerPulseValue);
@@ -170,10 +162,9 @@ public class AnimationManager {
                                 cellY + margin,
                                 cellSize - (2 * margin),
                                 cellSize - (2 * margin),
-                                6, 6 // More rounded for player
+                                6, 6
                         );
 
-                        // Draw player icon - minimalist dot
                         g2d.setColor(Theme.TEXT_LIGHT);
                         int iconMargin = cellSize / 3;
                         g2d.fillOval(
@@ -184,14 +175,12 @@ public class AnimationManager {
                         );
                     }
 
-                    // Draw path hint animation (if active)
                     if (model.getCell(x, y) == Cell.PATH_HINT) {
                         if (hintPathVisible) {
-                            // Use different colors based on algorithm
                             if (isAStarPathActive) {
-                                g2d.setColor(Theme.PATH_HINT_ASTAR_COLOR); // Blue for A*
+                                g2d.setColor(Theme.PATH_HINT_ASTAR_COLOR);
                             } else {
-                                g2d.setColor(Theme.PATH_HINT_BFS_COLOR); // Green for BFS
+                                g2d.setColor(Theme.PATH_HINT_BFS_COLOR);
                             }
 
                             g2d.fillRoundRect(
@@ -202,14 +191,12 @@ public class AnimationManager {
                                     4, 4
                             );
 
-                            // Draw minimalist arrow
                             if (isAStarPathActive) {
-                                g2d.setColor(new Color(50, 100, 200)); // Darker blue
+                                g2d.setColor(new Color(50, 100, 200));
                             } else {
-                                g2d.setColor(new Color(50, 150, 50)); // Darker green
+                                g2d.setColor(new Color(50, 150, 50));
                             }
 
-                            // Draw a simple directional triangle
                             int[] xPoints = {
                                     cellX + cellSize/5,
                                     cellX + cellSize*4/5,
@@ -223,11 +210,10 @@ public class AnimationManager {
                             g2d.fillPolygon(xPoints, yPoints, 3);
 
                         } else {
-                            // Use lighter versions of the same color scheme for blinking
                             if (isAStarPathActive) {
-                                g2d.setColor(new Color(180, 200, 255)); // Very light blue for A*
+                                g2d.setColor(new Color(180, 200, 255));
                             } else {
-                                g2d.setColor(new Color(180, 255, 180)); // Very light green for BFS
+                                g2d.setColor(new Color(180, 255, 180));
                             }
 
                             g2d.fillRoundRect(
@@ -240,9 +226,7 @@ public class AnimationManager {
                         }
                     }
 
-                    // Draw treasure with sparkle effect
                     if (model.getCell(x, y) == Cell.TREASURE) {
-                        // Base treasure
                         g2d.setColor(Theme.TREASURE_COLOR);
                         g2d.fillRoundRect(
                                 cellX + margin,
@@ -252,12 +236,10 @@ public class AnimationManager {
                                 4, 4
                         );
 
-                        // Treasure icon - minimalist gold coin/diamond
                         int iconSize = cellSize / 2;
                         int iconX = cellX + (cellSize - iconSize) / 2;
                         int iconY = cellY + (cellSize - iconSize) / 2;
 
-                        // Diamond shape
                         int[] xPoints = {
                                 iconX + iconSize/2,
                                 iconX + iconSize,
@@ -274,7 +256,6 @@ public class AnimationManager {
                         g2d.setColor(Theme.SOFT_GOLD);
                         g2d.fillPolygon(xPoints, yPoints, 4);
 
-                        // Highlight
                         g2d.setColor(Color.WHITE);
                         g2d.drawLine(
                                 iconX + iconSize/4,
@@ -283,7 +264,6 @@ public class AnimationManager {
                                 iconY + iconSize/2
                         );
 
-                        // Add sparkles
                         Point treasurePos = new Point(x, y);
                         if (treasureSparkles.containsKey(treasurePos)) {
                             int sparklesLeft = treasureSparkles.get(treasurePos);
@@ -293,7 +273,6 @@ public class AnimationManager {
                         }
                     }
 
-                    // Draw obstacle hit animation
                     if (lastHitObstacle != null &&
                             lastHitObstacle.x == x && lastHitObstacle.y == y &&
                             model.getCell(x, y) == Cell.OBSTACLE) {
@@ -316,7 +295,7 @@ public class AnimationManager {
     }
 
     /**
-     * Draws sparkle effects for treasure collection animation.
+     * draws sparkle effects for treasure collection animation.
      */
     private void drawTreasureSparkles(Graphics2D g2d, int cellX, int cellY, int cellSize, int frame) {
         g2d.setColor(Color.WHITE);
@@ -334,15 +313,14 @@ public class AnimationManager {
     }
 
     /**
-     * Sets the active hint path algorithm type.
-     * @param isAStar true for A* algorithm, false for BFS
+     * sets the active hint path algorithm type.
      */
     public void setAStarPathActive(boolean isAStar) {
         this.isAStarPathActive = isAStar;
     }
 
     /**
-     * Simple Point class for animation tracking.
+     * simple Point class for animation tracking.
      */
     private class Point {
         int x, y;
@@ -368,7 +346,7 @@ public class AnimationManager {
     }
 
     /**
-     * Clean up resources when no longer needed.
+     * cleans up resources when no longer needed.
      */
     public void dispose() {
         if (playerMoveTimer != null) playerMoveTimer.stop();

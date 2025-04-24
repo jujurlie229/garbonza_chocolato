@@ -17,19 +17,16 @@ public class GameController {
     private boolean isGameInProgress = false;
 
     /**
-     * Constructor initializes the game components and sets up event listeners.
+     * constructor initializes the game components and sets up event listeners.
      */
     public GameController(GameModel model, GameView view) {
         this.model = model;
         this.view = view;
 
-        // Set controller reference in view for popup dialogs
         view.setController(this);
-
-        // Get animation manager from view
         this.animationManager = view.getAnimationManager();
 
-        // Set up welcome screen start button listener
+        // welcome screen set up
         view.addStartButtonListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -37,7 +34,7 @@ public class GameController {
             }
         });
 
-        // Set up key listener for player movement
+        // player movement set up
         view.addKeyboardListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -47,7 +44,7 @@ public class GameController {
             }
         });
 
-        // Set up BFS hint button listener
+        // BFS hint set up
         view.addHintBFSButtonListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -57,7 +54,7 @@ public class GameController {
             }
         });
 
-        // Set up A* hint button listener
+        // A* hint button set up
         view.addHintAStarButtonListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -67,7 +64,7 @@ public class GameController {
             }
         });
 
-        // Set up reset button listener
+        // reset button set up
         view.addResetButtonListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -77,24 +74,20 @@ public class GameController {
     }
 
     /**
-     * Starts the game by showing the game screen and initializing the game state.
+     * start the game by showing the game screen and initializing the game state.
      */
     private void startGame() {
         // Show game screen
         view.showGameScreen();
-
-        // Reset game state
         resetGame();
-
-        // Set game in progress
         isGameInProgress = true;
     }
 
     /**
-     * Handles keyboard input for player movement.
+     * handles keyboard input for player movement.
      */
     private void handleKeyPress(int keyCode) {
-        // Ignore keypresses if game is not in progress
+        // ignore keypresses if game is not in progress
         if (!isGameInProgress) {
             return;
         }
@@ -103,10 +96,8 @@ public class GameController {
         int oldX = model.getPlayerPosition().getX();
         int oldY = model.getPlayerPosition().getY();
 
-        // Clear path hints when moving
         animationManager.stopHintPathAnimation();
 
-        // Translate key press to direction and move player
         switch (keyCode) {
             case KeyEvent.VK_UP:
                 foundTreasure = model.movePlayer(Direction.UP);
@@ -121,16 +112,14 @@ public class GameController {
                 foundTreasure = model.movePlayer(Direction.RIGHT);
                 break;
             default:
-                return; // Ignore other keys
+                return;
         }
 
-        // Get new position
         int newX = model.getPlayerPosition().getX();
         int newY = model.getPlayerPosition().getY();
 
-        // Check if player hit an obstacle (position didn't change but score decreased)
         if (oldX == newX && oldY == newY && model.getScore() < 100) {
-            // Calculate where the obstacle would be based on attempted direction
+            // calculating where the obstacle would be based on attempted direction
             int obstacleX = oldX;
             int obstacleY = oldY;
 
@@ -149,62 +138,46 @@ public class GameController {
                     break;
             }
 
-            // Start obstacle hit animation if the position is valid
             if (model.isValidPosition(obstacleX, obstacleY)) {
                 animationManager.startObstacleHitAnimation(obstacleX, obstacleY);
             }
         }
 
-        // If treasure was found, start collection animation and show popup
+        // If treasure was found, start animation and show popup
         if (foundTreasure) {
             animationManager.startTreasureCollectAnimation(newX, newY);
-
-            // Update the view before showing the popup
             updateView();
-
-            // Pause the game while showing the popup
             isGameInProgress = false;
 
-            // Show treasure found popup
             view.showTreasureFoundMessage(model.getTreasuresFound(), model.getTreasuresTotal());
 
-            // No need to update view or check game status here - it will be done after the popup is closed
             return;
         }
 
-        // Update the view
         updateView();
-
-        // Check game over conditions
         checkGameStatus();
     }
 
     /**
-     * Handles the BFS hint button press.
+     * handles the BFS hint button press.
      */
     private void handleHintBFSRequest() {
-        // Only show hint if we have enough score and treasures remain
+        // only showing the hint if we have enough score and treasures remain
         if (model.getScore() >= 3 && !model.allTreasuresFound()) {
-            // Clear previous hints first
             model.clearPathHints();
             animationManager.stopHintPathAnimation();
 
-            // Set the animation manager to display BFS path type
             animationManager.setAStarPathActive(false);
 
             boolean pathFound = model.showHintBFS();
 
             if (pathFound) {
-                // Start the path animation with BFS style
                 animationManager.startHintPathAnimation(false);
-
-                // Update statistics display
                 view.updateStatistics(true, model.getBFSCellsExplored(), model.getLastPathLength());
             }
 
             updateView();
 
-            // Check if we've run out of points after using hint
             if (model.getScore() <= 0) {
                 isGameInProgress = false;
                 view.showGameOverMessage(false, model.getScore());
@@ -214,31 +187,26 @@ public class GameController {
     }
 
     /**
-     * Handles the A* hint button press.
+     * handles the A* hint button press.
      */
     private void handleHintAStarRequest() {
-        // Only show hint if we have enough score and treasures remain
+        // only showing the hint if we have enough score and treasures remain
         if (model.getScore() >= 3 && !model.allTreasuresFound()) {
-            // Clear previous hints first
             model.clearPathHints();
             animationManager.stopHintPathAnimation();
 
-            // Set the animation manager to display A* path type
             animationManager.setAStarPathActive(true);
 
             boolean pathFound = model.showHintAStar();
 
             if (pathFound) {
-                // Start the path animation with A* style
                 animationManager.startHintPathAnimation(true);
-
-                // Update statistics display
                 view.updateStatistics(false, model.getAStarCellsExplored(), model.getLastPathLength());
             }
 
             updateView();
 
-            // Check if we've run out of points after using hint
+            // check if player has run out of points
             if (model.getScore() <= 0) {
                 isGameInProgress = false;
                 view.showGameOverMessage(false, model.getScore());
@@ -248,7 +216,7 @@ public class GameController {
     }
 
     /**
-     * Checks if the game is over and shows appropriate message.
+     * check if the game is over and shows appropriate message.
      */
     private void checkGameStatus() {
         if (model.isGameOver()) {
@@ -260,39 +228,29 @@ public class GameController {
     }
 
     /**
-     * Resets the game to initial state.
+     * reset to the initial state.
      */
     private void resetGame() {
-        // Stop any ongoing animations
         animationManager.stopHintPathAnimation();
-
-        // Reset the model
         model.resetGame();
-
-        // Update the view
         updateView();
-
-        // Clear statistics
         view.updateStatistics(true, 0, 0);
-
-        // Game is now in progress
         isGameInProgress = true;
     }
 
     /**
-     * Updates the view to reflect the current model state.
+     * updates the view to reflect the current model state.
      */
     private void updateView() {
         view.updateView(model);
     }
 
     /**
-     * Resumes the game after it was paused (e.g., after a popup dialog)
+     * resumes the game after it was paused (e.g., after a popup dialog)
      */
     public void resumeGame() {
         isGameInProgress = true;
 
-        // Update view and check game status after resuming
         updateView();
         checkGameStatus();
     }

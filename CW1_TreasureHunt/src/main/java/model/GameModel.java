@@ -8,35 +8,35 @@ import java.util.List;
  * Contains all the game state and logic.
  */
 public class GameModel {
-    // Constants
+    // constants
     public static final int GRID_SIZE = 20;
     public static final int NUM_TREASURES = 3;
     public static final int MIN_OBSTACLES = 10;
     public static final int MAX_OBSTACLES = 100;
     public static final int INITIAL_SCORE = 100;
 
-    // Game state
+    // game state
     private Cell[][] grid;
-    private Cell[][] visibleGrid; // What the player can see
+    private Cell[][] visibleGrid;
     private Point playerPosition;
     private int score;
     private int treasuresFound;
     private List<Point> treasureLocations;
     private List<Point> currentPath;
-    private boolean hintUsedSinceLastMove; // Tracks if hint was already used before moving
-    private List<Point> revealedObstacles; // Track obstacles that have been revealed
-    private List<Point> discoveredTreasures; // Track treasures that have been found
+    private boolean hintUsedSinceLastMove;
+    private List<Point> revealedObstacles;
+    private List<Point> discoveredTreasures;
 
-    // Search algorithm statistics
+    // search algorithm statistics
     private int bfsCellsExplored;
     private int aStarCellsExplored;
     private int lastPathLength;
 
-    // Direction vectors for movement and pathfinding
+    // direction vectors for movement and pathfinding
     private static final int[][] DIRECTIONS = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}}; // down, right, up, left
 
     /**
-     * Constructor initializes the game state and generates the initial map.
+     *  initializes the game state and generates the initial map.
      */
     public GameModel() {
         grid = new Cell[GRID_SIZE][GRID_SIZE];
@@ -50,7 +50,7 @@ public class GameModel {
     }
 
     /**
-     * Resets the game to its initial state.
+     * resets the game to its initial state.
      */
     public void resetGame() {
         score = INITIAL_SCORE;
@@ -65,23 +65,23 @@ public class GameModel {
     }
 
     /**
-     * Generates a new random map with obstacles and treasures.
+     * generates a new random map with obstacles and treasures.
      */
     public void generateMap() {
         // Initialize map with empty cells
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 grid[i][j] = Cell.EMPTY;
-                visibleGrid[i][j] = Cell.EMPTY; // All cells start as empty in visible grid
+                visibleGrid[i][j] = Cell.EMPTY;
             }
         }
 
-        // Place player in the center
+        // placing the player in the center
         playerPosition = new Point(GRID_SIZE / 2, GRID_SIZE / 2);
         grid[playerPosition.getY()][playerPosition.getX()] = Cell.PLAYER;
         visibleGrid[playerPosition.getY()][playerPosition.getX()] = Cell.PLAYER;
 
-        // Place random obstacles
+        // placing the random obstacles
         Random rand = new Random();
         int numObstacles = rand.nextInt(MAX_OBSTACLES - MIN_OBSTACLES + 1) + MIN_OBSTACLES;
 
@@ -89,19 +89,17 @@ public class GameModel {
             int x = rand.nextInt(GRID_SIZE);
             int y = rand.nextInt(GRID_SIZE);
 
-            // Don't place obstacle on player or existing obstacle
             if ((x != playerPosition.getX() || y != playerPosition.getY()) && grid[y][x] == Cell.EMPTY) {
                 grid[y][x] = Cell.OBSTACLE;
-                // Don't add to visible grid - obstacles are hidden initially
             }
         }
 
-        // Place treasures
+        // placing treasures
         placeTreasures();
     }
 
     /**
-     * Places treasures on the map, ensuring they are reachable from the player's position.
+     * places treasures on the map, ensuring they are reachable from the player's position.
      */
     private void placeTreasures() {
         treasureLocations.clear();
@@ -115,11 +113,9 @@ public class GameModel {
                 x = rand.nextInt(GRID_SIZE);
                 y = rand.nextInt(GRID_SIZE);
 
-                // Check if position is empty and not player position
                 if (grid[y][x] == Cell.EMPTY &&
                         (x != playerPosition.getX() || y != playerPosition.getY())) {
 
-                    // Check if treasure is reachable from player's position
                     if (isReachable(playerPosition, new Point(x, y))) {
                         validPosition = true;
                     }
@@ -128,19 +124,18 @@ public class GameModel {
 
             grid[y][x] = Cell.TREASURE;
             treasureLocations.add(new Point(x, y));
-            // Don't add to visible grid - treasures are hidden initially
         }
     }
 
     /**
-     * Checks if a position is valid (within grid bounds).
+     * check if a position is valid (within grid bounds).
      */
     public boolean isValidPosition(int x, int y) {
         return x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE;
     }
 
     /**
-     * Checks if there is a path from start to end point.
+     * check if there is a path from start to end point.
      */
     public boolean isReachable(Point start, Point end) {
         boolean[][] visited = new boolean[GRID_SIZE][GRID_SIZE];
@@ -172,20 +167,17 @@ public class GameModel {
     }
 
     /**
-     * Attempts to move the player in the specified direction.
-     * Returns true if the move resulted in finding a treasure.
+     * attempting to move the player in the specified direction.
+     * returns true if the move resulted in finding a treasure.
      */
     public boolean movePlayer(Direction direction) {
         int newX = playerPosition.getX();
         int newY = playerPosition.getY();
 
-        // Clear path hints
         clearPathHints();
 
-        // Reset hint used flag when player moves
         hintUsedSinceLastMove = false;
 
-        // Calculate new position based on direction
         switch (direction) {
             case UP:
                 newY--;
@@ -205,22 +197,17 @@ public class GameModel {
         boolean hitObstacle = false;
         Point obstaclePoint = null;
 
-        // Check if the move is valid
         if (isValidPosition(newX, newY)) {
             if (grid[newY][newX] == Cell.OBSTACLE) {
-                // Player hit a wall
                 score -= 10;
                 hitObstacle = true;
                 obstaclePoint = new Point(newX, newY);
 
-                // Reveal the obstacle in the visible grid
                 visibleGrid[newY][newX] = Cell.OBSTACLE;
                 revealedObstacles.add(obstaclePoint);
             } else {
-                // Get the current cell in the old player position
                 Point oldPosition = new Point(playerPosition.getX(), playerPosition.getY());
 
-                // Update the visible grid at old position based on what's underneath
                 boolean isOnDiscoveredTreasure = false;
                 for (Point p : discoveredTreasures) {
                     if (p.getX() == oldPosition.getX() && p.getY() == oldPosition.getY()) {
@@ -234,11 +221,9 @@ public class GameModel {
                     visibleGrid[oldPosition.getY()][oldPosition.getX()] = Cell.EMPTY;
                 }
 
-                // Update the actual grid
                 grid[playerPosition.getY()][playerPosition.getX()] = Cell.EMPTY;
 
                 if (grid[newY][newX] == Cell.TREASURE) {
-                    // Player found a treasure
                     treasuresFound++;
                     Point treasurePoint = new Point(newX, newY);
                     int finalNewX = newX;
@@ -246,19 +231,15 @@ public class GameModel {
                     treasureLocations.removeIf(p -> p.getX() == finalNewX && p.getY() == finalNewY);
                     foundTreasure = true;
 
-                    // Add to discovered treasures list for tracking
                     discoveredTreasures.add(treasurePoint);
 
-                    // Make the treasure visible in the visible grid before the player moves there
                     visibleGrid[newY][newX] = Cell.TREASURE;
                 }
 
-                // Update player position in the grid
                 playerPosition = new Point(newX, newY);
                 grid[newY][newX] = Cell.PLAYER;
                 visibleGrid[newY][newX] = Cell.PLAYER;
 
-                // Moving costs 1 score point
                 score -= 1;
             }
         }
@@ -267,7 +248,7 @@ public class GameModel {
     }
 
     /**
-     * Clears any path hints from the map.
+     * clears any path hints from the map.
      */
     public void clearPathHints() {
         for (Point p : currentPath) {
@@ -279,18 +260,16 @@ public class GameModel {
     }
 
     /**
-     * Shows only the next step towards the nearest treasure using BFS.
-     * Returns true if a path was found.
+     * showing only the next step towards the nearest treasure using BFS.
+     * returns true if a path was found.
      */
     public boolean showHintBFS() {
-        // Clear previous hints
         clearPathHints();
 
         if (treasureLocations.isEmpty()) {
             return false;
         }
 
-        // Find closest treasure and shortest path
         Point closestTreasure = null;
         List<Point> shortestPath = null;
         int shortestDistance = Integer.MAX_VALUE;
@@ -304,11 +283,9 @@ public class GameModel {
             }
         }
 
-        // Mark only the first step of the path on the map
         if (shortestPath != null && !shortestPath.isEmpty()) {
             Point nextStep = shortestPath.get(0);
 
-            // Only show the hint if the cell is not an obstacle or already revealed
             if (grid[nextStep.getY()][nextStep.getX()] != Cell.OBSTACLE ||
                     visibleGrid[nextStep.getY()][nextStep.getX()] == Cell.OBSTACLE) {
 
@@ -316,10 +293,8 @@ public class GameModel {
                 currentPath.add(nextStep);
             }
 
-            // Store the full path length for statistics
             lastPathLength = shortestPath.size();
 
-            // Using hint costs 3 points - but only charge once if player is comparing algorithms
             if (!hintUsedSinceLastMove) {
                 score -= 3;
                 hintUsedSinceLastMove = true;
@@ -332,18 +307,16 @@ public class GameModel {
     }
 
     /**
-     * Shows only the next step towards the nearest treasure using A* search.
-     * Returns true if a path was found.
+     * shows only the next step towards the nearest treasure using A* search.
+     * returns true if a path was found.
      */
     public boolean showHintAStar() {
-        // Clear previous hints
         clearPathHints();
 
         if (treasureLocations.isEmpty()) {
             return false;
         }
 
-        // Find closest treasure and shortest path
         Point closestTreasure = null;
         List<Point> shortestPath = null;
         int shortestDistance = Integer.MAX_VALUE;
@@ -357,11 +330,9 @@ public class GameModel {
             }
         }
 
-        // Mark only the first step of the path on the map
         if (shortestPath != null && !shortestPath.isEmpty()) {
             Point nextStep = shortestPath.get(0);
 
-            // Only show the hint if the cell is not an obstacle or already revealed
             if (grid[nextStep.getY()][nextStep.getX()] != Cell.OBSTACLE ||
                     visibleGrid[nextStep.getY()][nextStep.getX()] == Cell.OBSTACLE) {
 
@@ -369,10 +340,8 @@ public class GameModel {
                 currentPath.add(nextStep);
             }
 
-            // Store the full path length for statistics
             lastPathLength = shortestPath.size();
 
-            // Using hint costs 3 points - but only charge once if player is comparing algorithms
             if (!hintUsedSinceLastMove) {
                 score -= 3;
                 hintUsedSinceLastMove = true;
@@ -385,25 +354,23 @@ public class GameModel {
     }
 
     /**
-     * Finds the shortest path between two points using BFS.
+     * finding the shortest path between two points using BFS.
      */
     private List<Point> findShortestPath(Point start, Point end) {
         boolean[][] visited = new boolean[GRID_SIZE][GRID_SIZE];
         Queue<Point> queue = new LinkedList<>();
         Map<Point, Point> parentMap = new HashMap<>();
 
-        // Reset cells explored counter
         bfsCellsExplored = 0;
 
         queue.add(start);
         visited[start.getY()][start.getX()] = true;
-        bfsCellsExplored++; // Count starting cell
+        bfsCellsExplored++;
 
         while (!queue.isEmpty()) {
             Point current = queue.poll();
 
             if (current.getX() == end.getX() && current.getY() == end.getY()) {
-                // Path found, reconstruct it
                 List<Point> path = reconstructPath(parentMap, start, end);
                 lastPathLength = path.size();
                 return path;
@@ -419,77 +386,64 @@ public class GameModel {
                     queue.add(next);
                     visited[newY][newX] = true;
                     parentMap.put(next, current);
-                    bfsCellsExplored++; // Count each explored cell
+                    bfsCellsExplored++;
                 }
             }
         }
 
-        return null; // No path found
+        return null;
     }
 
     /**
-     * Calculates the Manhattan distance between two points.
+     * calculates the Manhattan distance between two points.
      */
     private int calculateManhattanDistance(Point a, Point b) {
         return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY());
     }
 
     /**
-     * Finds the path between two points using A* search algorithm.
+     * find the path between two points using A* search algorithm.
      */
     private List<Point> findPathAStar(Point start, Point end) {
-        // Reset cells explored counter
         aStarCellsExplored = 0;
 
-        // Priority queue with custom comparator for f-score
         PriorityQueue<AStarNode> openSet = new PriorityQueue<>(
                 Comparator.comparingInt(node -> node.fScore)
         );
 
-        // Track visited nodes
         boolean[][] visited = new boolean[GRID_SIZE][GRID_SIZE];
 
-        // For node n, gScore[n] is the cost of the cheapest path from start to n
         Map<Point, Integer> gScore = new HashMap<>();
 
-        // For node n, parent[n] is the node immediately preceding it on the cheapest path
         Map<Point, Point> parentMap = new HashMap<>();
 
-        // Add start node to open set
         gScore.put(start, 0);
         int startFScore = calculateManhattanDistance(start, end);
         openSet.add(new AStarNode(start, startFScore));
-        aStarCellsExplored++; // Count starting node
+        aStarCellsExplored++;
 
         while (!openSet.isEmpty()) {
-            // Get node with lowest f-score
             AStarNode currentNode = openSet.poll();
             Point current = currentNode.point;
 
-            // Skip if already visited
             if (visited[current.getY()][current.getX()]) {
                 continue;
             }
 
-            // Mark as visited
             visited[current.getY()][current.getX()] = true;
 
-            // Check if we reached the goal
             if (current.getX() == end.getX() && current.getY() == end.getY()) {
                 List<Point> path = reconstructPath(parentMap, start, end);
                 lastPathLength = path.size();
                 return path;
             }
 
-            // Get current g-score (cost from start)
             int currentGScore = gScore.getOrDefault(current, Integer.MAX_VALUE);
 
-            // Check all neighbors
             for (int[] dir : DIRECTIONS) {
                 int newX = current.getX() + dir[0];
                 int newY = current.getY() + dir[1];
 
-                // Skip invalid or obstacle cells
                 if (!isValidPosition(newX, newY) ||
                         grid[newY][newX] == Cell.OBSTACLE) {
                     continue;
@@ -497,32 +451,27 @@ public class GameModel {
 
                 Point neighbor = new Point(newX, newY);
 
-                // Calculate tentative g-score (1 step from current)
                 int tentativeGScore = currentGScore + 1;
 
-                // If this path is better than any previous one
                 if (tentativeGScore < gScore.getOrDefault(neighbor, Integer.MAX_VALUE)) {
-                    // Record this path
                     parentMap.put(neighbor, current);
                     gScore.put(neighbor, tentativeGScore);
 
-                    // Calculate f-score = g-score + heuristic
                     int fScore = tentativeGScore + calculateManhattanDistance(neighbor, end);
 
-                    // Add to open set if not visited
                     if (!visited[newY][newX]) {
                         openSet.add(new AStarNode(neighbor, fScore));
-                        aStarCellsExplored++; // Count each explored cell
+                        aStarCellsExplored++;
                     }
                 }
             }
         }
 
-        return null; // No path found
+        return null;
     }
 
     /**
-     * Helper class for A* algorithm to track nodes and their f-scores.
+     * helper class for A* algorithm to track nodes and their f-scores.
      */
     private class AStarNode {
         Point point;
@@ -535,7 +484,7 @@ public class GameModel {
     }
 
     /**
-     * Reconstructs a path from the parent map created during pathfinding.
+     * reconstructs a path from the parent map created during pathfinding.
      */
     private List<Point> reconstructPath(Map<Point, Point> parentMap, Point start, Point end) {
         List<Point> path = new ArrayList<>();
@@ -550,14 +499,9 @@ public class GameModel {
         return path;
     }
 
-    // Getters and setters
-
+    // getters and setters
     public Cell getCell(int x, int y) {
         return visibleGrid[y][x]; // Return the visible grid cell
-    }
-
-    public Cell getRealCell(int x, int y) {
-        return grid[y][x]; // Return the actual grid cell (for internal use)
     }
 
     public int getScore() {
@@ -584,43 +528,9 @@ public class GameModel {
         return playerPosition;
     }
 
-    /**
-     * Reveals a treasure at the specified location.
-     * Used when player discovers a treasure.
-     */
-    public void revealTreasure(int x, int y) {
-        if (isValidPosition(x, y) && grid[y][x] == Cell.TREASURE) {
-            visibleGrid[y][x] = Cell.TREASURE;
-            discoveredTreasures.add(new Point(x, y));
-        }
-    }
 
     /**
-     * Check if the position contains a revealed obstacle
-     */
-    public boolean isRevealedObstacle(int x, int y) {
-        for (Point p : revealedObstacles) {
-            if (p.getX() == x && p.getY() == y) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Check if the position contains a discovered treasure
-     */
-    public boolean isDiscoveredTreasure(int x, int y) {
-        for (Point p : discoveredTreasures) {
-            if (p.getX() == x && p.getY() == y) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns the number of cells explored by the BFS algorithm
+     * returns the number of cells explored by the BFS algorithm
      * during the last hint calculation.
      */
     public int getBFSCellsExplored() {
@@ -628,7 +538,7 @@ public class GameModel {
     }
 
     /**
-     * Returns the number of cells explored by the A* algorithm
+     * return the number of cells explored by the A* algorithm
      * during the last hint calculation.
      */
     public int getAStarCellsExplored() {
@@ -636,17 +546,10 @@ public class GameModel {
     }
 
     /**
-     * Returns the length of the last calculated path.
+     * returns the length of the last calculated path.
      */
     public int getLastPathLength() {
         return lastPathLength;
     }
 
-    /**
-     * Legacy method to maintain backward compatibility.
-     * Uses BFS as the default algorithm.
-     */
-    public boolean showHint() {
-        return showHintBFS();
-    }
 }

@@ -15,36 +15,30 @@ import java.util.Enumeration;
  */
 public class TreasureHunt {
     public static void main(String[] args) {
-        // Set the look and feel to the system default
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
-            // Apply global UI settings for navy and gold theme
             applyThemeUISettings();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // Enable anti-aliased text and graphics
         System.setProperty("awt.useSystemAAFontSettings", "on");
         System.setProperty("swing.aatext", "true");
 
         SwingUtilities.invokeLater(() -> {
-            // Create the MVC components
             GameModel model = new GameModel();
             GameView view = new GameView();
             GameController controller = new GameController(model, view);
 
-            // Display the view
             view.setVisible(true);
         });
     }
 
     /**
-     * Applies global UI settings for consistent navy and gold theme
+     * applies global UI settings for consistent navy and gold theme
      */
     private static void applyThemeUISettings() {
-        // Set global UI colors for components
         UIManager.put("Panel.background", Theme.NAVY);
         UIManager.put("OptionPane.background", Theme.NAVY);
         UIManager.put("OptionPane.messageForeground", Theme.TEXT_LIGHT);
@@ -54,7 +48,6 @@ public class TreasureHunt {
         UIManager.put("ScrollBar.thumb", Theme.LIGHT_NAVY);
         UIManager.put("ScrollBar.track", Theme.NAVY);
 
-        // Update default font for all UI components
         Enumeration<Object> keys = UIManager.getDefaults().keys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
